@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Document Analysis</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background: linear-gradient(120deg, #ff9a9e, #fad0c4, #fad0c4, #fcb69f, #ff9a9e);
+            background-size: 200% 200%;
+            animation: gradient-animation 10s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* Ensures the container is centered vertically */
+        }
+
+        /* Keyframes for the gradient animation */
+        @keyframes gradient-animation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        .container {
+    width: 60vw; /* Ensures it takes the full viewport width */
+    max-height: 80vh; /* Prevents it from growing too tall and leaving space */
+    padding: 40px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    margin: 20px auto; /* Adds margin around the container (top/bottom/left/right) */
+    overflow-y: auto; /* Enables scrolling if content overflows */
+    overflow-x: hidden;
+}
+/* Style the scrollbar within the .container div */
+.container::-webkit-scrollbar {
+    width: 10px; /* Scrollbar width */
+}
+
+.container::-webkit-scrollbar-track {
+    background: #f0f0f0; /* Track color */
+    border-radius: 10px;
+}
+
+.container::-webkit-scrollbar-thumb {
+    background-color: #333; /* Scroll thumb color */
+    border-radius: 10px;
+    border: 2px solid #f0f0f0; /* Padding inside the thumb */
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+    background-color: #555; /* Darker color when hovering */
+}
+
+
+
+
+        h1 {
+            text-align: left;
+            font-size: 1.75em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .upload-section, .chat-section {
+            margin-bottom: 30px;
+        }
+        .upload-section button, .chat-section button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .upload-section button:hover, .chat-section button:hover {
+            background-color: #555;
+        }
+        .upload-section input[type="file"] {
+            display: none;
+        }
+        .upload-section label {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .file-status {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .file-status div {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-file {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0 0 0 10px;
+            font-size: 1.2em;
+            line-height: 1;
+            transition: color 0.3s;
+        }
+
+        .delete-file:hover {
+            color: #ff4444;
+        }
+        .chat .bubble.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: #666;
+            font-weight: bold;
+            border-top: 2px solid transparent;
+            transition: color 0.3s;
+        }
+        .tab:hover, .tab.active {
+            color: #333;
+            border-top: 2px solid #333;
+        }
+        .tab-content {
+            display: none;
+            margin-top: 20px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .chat-section input[type="text"] {
+            width: calc(100% - 200px);
+            padding: 10px;
+            /* margin-right: 10px; */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .chat-history {
+            margin-top: 20px;
+    max-height: 400px; /* Adjust based on the space you want for the chat history */
+    overflow-y: scroll; /* Enables scrolling */
+    padding: 10px;
+}
+
+/* Hide the scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+.chat-history::-webkit-scrollbar {
+    width: 0px; /* Makes the scrollbar width 0px, effectively hiding it */
+    background: transparent; /* Ensures the scrollbar background is transparent */
+}
+
+/* Optional: Hide scrollbar for Firefox */
+.chat-history {
+    scrollbar-width: thin; /* Sets the scrollbar width */
+    scrollbar-color: transparent transparent; /* Hides the thumb and track */
+}
+
+        .chat {
+            margin-bottom: 15px;
+        }
+        .chat .bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin: 5px 0;
+        }
+        .chat.user {
+            text-align: right;
+        }
+        .chat.user .bubble {
+            background-color: #333;
+            color: white;
+            display: inline-block;
+        }
+        .chat.bot {
+            text-align: left;
+        }
+        #questionForm button[type="submit"] {
+            width: 60px; /* Adjust width as desired */
+            height: 33px; /* Adjust height as desired */
+            padding: 10px; /* Optional: change padding for more control */
+        }
+        .chat.bot .bubble {
+            background-color: #f0f0f0;
+            color: #333;
+            display: inline-block;
+        }
+        #processingStatus {
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .formatted-summary {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .summary-heading {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: #1a1a1a;
+        }
+        .summary-paragraph {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+        .summary-paragraph:last-child {
+            margin-bottom: 0;
+        }
+        .search-section {
+            margin-bottom: 20px;
+        }
+        .search-input {
+            width: calc(100% - 120px);
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .research-results {
+            margin-top: 20px;
+        }
+        .research-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+        .research-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+        .research-item a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .research-item a:hover {
+            text-decoration: underline;
+        }
+        .typing-bubbles {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .typing-bubbles .bubble {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin: 0 5px;
+            animation: typing-bubble 1s infinite ease-in-out;
+        }
+
+        .typing-bubbles .bubble:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-bubbles .bubble:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .chat-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-input-container input[type="text"] {
+            width: calc(100% - 40px);
+            padding-right: 40px;
+            padding-left: 10px;
+            border-radius: 5px;
+        }
+
+        /* .chat-input-container button#micButton {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        } */
+
+        /* .chat-input-container button#micButton svg {
+            pointer-events: none;
+        } */
+
+        @keyframes typing-bubble {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        dialog.modal {
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+        }
+
+        dialog::backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .modal-content button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .modal-content button:hover {
+            background-color: #555;
+        }
+
+        .recording {
+            animation: pulse 1.5s ease-in-out infinite;
+            background-color: #ff4444 !important;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #micButton {
+            position: relative;
+            padding: 8px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 50%;
+            background-color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #micButton:hover {
+            background-color: #555;
+        }
+
+        #micButton.recording svg {
+            fill: white;
+        }
+
+        .recording-indicator {
+            display: none;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 8px;
+            height: 8px;
+            background-color: #ff4444;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .summary-button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .summary-button:hover {
+            background-color: #555;
+        }
+
+        .keywords-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.research-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .upload-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+        }
+        .loading-spinner::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .keywords-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .keyword-tag {
+            background-color: #e9ecef;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+        }
+        .papers-container {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .paper-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #fff;
+        }
+        .paper-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .paper-authors {
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .paper-abstract {
+            margin: 12px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .paper-links {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .paper-link {
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .view-link {
+            background-color: #007bff;
+            color: white;
+        }
+        .download-link {
+            background-color: #28a745;
+            color: white;
+        }
+        .section {
+            margin: 24px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        #summaryResult {
+            margin-top: 20px;
+        }
+
+        #micButton.recording .recording-indicator {
+            display: block;
+        }
+
+        #recordingStatus {
+            display: none;
+            font-size: 0.8em;
+            color: #ff4444;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        #recordingStatus.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Advanced Document Analysis</h1>
+        <div class="upload-section">
+            <h2>Upload Documents</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <label for="fileInput">Choose Files</label>
+                <input type="file" id="fileInput" name="files" multiple accept=".pdf">
+                <button type="button" onclick="processDocuments()">Process Documents</button>
+                <div id="fileStatus" class="file-status"></div>  <!-- Added this line -->
+            </form>
+            <div id="processingStatus"></div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="openTab(event, 'Chat')">Chat</div>
+            <div class="tab" onclick="openTab(event, 'Summarize')">Summarize</div>
+            <div class="tab" onclick="openTab(event, 'External')">External</div>
+            <!-- <div class="tab" onclick="openTab(event, 'Voicechat')">Voicechat</div> -->
+        </div>
+
+        <div id="Chat" class="tab-content active chat-section">
+            <h2>Chat with Document</h2>
+            <form id="questionForm">
+                <input type="text" id="question" name="question" placeholder="Type your question here" required>
+                <!-- Mic icon SVG -->
+                <button type="button" id="micButton" onclick="startVoiceChat()">
+                    <div class="recording-indicator"></div>
+                    <svg xmlns="https://www.svgrepo.com/svg/1902/microphone" viewBox="0 0 24 24" width="15" height="15" fill="#fff">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3s-3 1.34-3 3v5c0 1.66 1.34 3 3 3zm4.3-3c0 2.14-1.72 3.88-3.83 3.99L12.47 17h-0.93l-0.01-.01C9.42 16.88 7.7 15.14 7.7 13h1.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5h1.5zm-2.5 8v-1.5h1.5v1.5h2v-1.5h1.5v1.5H17v-1.5h-2v1.5h-0.7z"/>
+                    </svg>
+                </button>
+                <button type="submit">Ask</button>
+            </form>
+            <div id="recordingStatus">Recording...</div>
+            <div class="chat-history" id="chatHistory"></div>
+        </div>
+
+        <div id="Summarize" class="tab-content">
+            <h2>Summarize Document</h2>
+            <button onclick="generateSummary()" class="summary-button">Generate Summary</button>
+            <div id="summaryResult"></div>
+        </div>
+
+        <div id="External" class="tab-content">
+            <div class="research-container">
+                <h2>Research Paper Analysis</h2>
+                
+                <div class="upload-section">
+                    <input type="file" id="fileInput" accept=".pdf" multiple>
+                    <button onclick="analyzePapers()">Analyze Papers</button>
+                </div>
+        
+                <div id="resultsContainer">
+                    <div id="keywords-section" class="section" style="display: none;">
+                        <h3>Keywords</h3>
+                        <div id="keywords-list" class="keywords-container"></div>
+                    </div>
+        
+                    <div id="papers-section" class="section" style="display: none;">
+                        <h3>Related Papers</h3>
+                        <div id="papers-list" class="papers-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+        <div id="Voicechat" class="tab-content">
+            <h2>Voice Chat</h2>
+            <button class="voice-button" onclick="startVoiceChat()">Start Voice Recording</button>
+            <p id="voiceText">Click the button to start recording...</p>
+        </div>
+        <dialog id="processingAlertModal" class="modal">
+            <div class="modal-content">
+                <h3>Document Processing Required</h3>
+                <p>Check whether a document has been selected and processed</p>
+                <button onclick="this.closest('dialog').close()">Got it</button>
+            </div>
+        </dialog>
+    </div>
+
+    <script>
+        let processedFiles = new FormData();
+        let documentProcessed = false;
+        let uploadedFiles = [];
+        let mediaStream = null;
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const fileStatus = document.getElementById('fileStatus');
+            const files = this.files;
+            
+            // let fileList = '';
+            // for(let i = 0; i < files.length; i++) {
+            //     fileList += `<div>${escapeHtml(files[i].name)}</div>`;
+            // }
+            
+            // fileStatus.innerHTML = fileList;
+            // console.log('File status HTML:', fileList); // Debug log
+
+            uploadedFiles = Array.from(files);
+    
+            displayFiles();
+        });
+
+
+        function displayFiles() {
+            const fileStatus = document.getElementById('fileStatus');
+            let fileList = '';
+            
+            uploadedFiles.forEach((file, index) => {
+                fileList += `
+                    <div>
+                        ${escapeHtml(file.name)}
+                        <button class="delete-file" onclick="deleteFile(${index})" title="Delete file">×</button>
+                    </div>
+                `;
+            });
+            
+            fileStatus.innerHTML = fileList;
+        }
+
+        function deleteFile(index) {
+            // Remove file from array
+            uploadedFiles.splice(index, 1);
+            
+            // Create new FileList-like object
+            const dt = new DataTransfer();
+            uploadedFiles.forEach(file => dt.items.add(file));
+            
+            // Update the input's files
+            document.getElementById('fileInput').files = dt.files;
+            
+            // Update display
+            displayFiles();
+
+            // Update processing status
+            const processingStatus = document.getElementById('processingStatus');
+            if (processingStatus.textContent.includes('processed')) {
+                processingStatus.textContent = 'Process again';
+                // Reset the documentProcessed flag if you're using it
+                documentProcessed = false;
+            }
+        }
+
+        function openTab(event, tabName) {
+            const tabs = document.getElementsByClassName('tab');
+            const contents = document.getElementsByClassName('tab-content');
+
+            Array.from(tabs).forEach(tab => tab.classList.remove('active'));
+            Array.from(contents).forEach(content => content.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function processDocuments() {
+            const fileInput = document.getElementById('fileInput');
+            const processingStatus = document.getElementById('processingStatus');
+            
+            if (fileInput.files.length === 0) {
+                document.getElementById('processingAlertModal').showModal();
+                return;
+            }
+
+            processedFiles = new FormData();
+            Array.from(fileInput.files).forEach(file => {
+                processedFiles.append('files', file);
+            });
+
+            processingStatus.textContent = 'Processing documents...';
+
+            fetch('/upload', {
+                method: 'POST',
+                body: processedFiles
+            })
+            .then(response => response.json())
+            .then(data => {
+                documentProcessed = true;
+                processingStatus.textContent = data.message;
+            })
+            .catch(error => {
+                processingStatus.textContent = 'Error processing documents: ' + error.message;
+                console.error('Error:', error);
+            });
+        }
+
+        function createTypingBubbles() {
+            const bubbles = document.createElement('div');
+            bubbles.classList.add('typing-bubbles');
+            
+            for (let i = 0; i < 3; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('bubble');
+                bubbles.appendChild(bubble);
+            }
+            
+            return bubbles;
+        }
+
+        document.getElementById('questionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!documentProcessed) {
+                document.getElementById('processingAlertModal').showModal();
+                return;
+            }
+
+            const question = document.getElementById('question').value.trim();
+            const chatHistory = document.getElementById('chatHistory');
+
+            if (question) {
+                const userBubble = `<div class="chat user"><div class="bubble">${question}</div></div>`;
+                chatHistory.insertAdjacentHTML('beforeend', userBubble);
+                
+                document.getElementById('question').value = '';
+
+                const typingBubbles = createTypingBubbles();
+                chatHistory.insertAdjacentElement('beforeend', typingBubbles);
+
+                fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        question: question
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                        typingBubbles.remove();
+
+                        // Format the response: make text between ** bold and replace \n with <br> for new lines
+                        let formattedResponse = data.response
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold text between **
+                            .replace(/\n/g, '<br>');  // Add line breaks
+
+                        const botBubble = `<div class="chat bot"><div class="bubble">${formattedResponse}</div></div>`;
+                        chatHistory.insertAdjacentHTML('beforeend', botBubble);
+                        chatHistory.scrollTop = chatHistory.scrollHeight;
+                    })
+
+                .catch(error => {
+                    console.error('Error:', error);
+
+                    typingBubbles.remove();
+
+                    const errorBubble = `<div class="chat bot"><div class="bubble">Error: ${error.message}</div></div>`;
+                    chatHistory.insertAdjacentHTML('beforeend', errorBubble);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                });
+            }
+        });
+
+
+        function generateSummary() {
+            if (!documentProcessed) {
+                document.getElementById('processingAlertModal').showModal();
+                return;
+            }
+
+            const summaryResult = document.getElementById('summaryResult');
+            summaryResult.textContent = 'Generating summary...';
+
+            // Create a new FormData object specifically for the summary request
+            const summaryFormData = new FormData();
+            uploadedFiles.forEach(file => {
+                summaryFormData.append('files', file);
+            });
+
+            fetch('/summarize', {
+                method: 'POST',
+                body: summaryFormData  // Use the new FormData object
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                let summary = data.summary || 'No summary available.';
+                summary = summary
+                    .replace(/\*\*/g, '')
+                    .replace(/\*/g, '')
+                    .replace(/_{2,}/g, '')
+                    .replace(/`/g, '')
+                    .trim();
+
+                const formattedSummary = document.createElement('div');
+                formattedSummary.className = 'formatted-summary';
+                
+                const paragraphs = summary.split('\n');
+                
+                paragraphs.forEach(para => {
+                    if (para.trim()) {
+                        const p = document.createElement('p');
+                        
+                        const isHeading = (
+                            /^(Section|Chapter|Part|Introduction|Conclusion|Summary|Key Points|Overview):/i.test(para) ||
+                            /^\d+[\.)]\s/.test(para) ||
+                            (para.length < 60 && para.endsWith(':')) ||
+                            /^#+\s/.test(para)
+                        );
+                        
+                        let cleanPara = para.replace(/^#+\s/, '');
+                        
+                        if (isHeading) {
+                            p.className = 'summary-heading';
+                        } else {
+                            p.className = 'summary-paragraph';
+                        }
+                        
+                        p.textContent = cleanPara.trim();
+                        formattedSummary.appendChild(p);
+                    }
+                });
+
+                summaryResult.innerHTML = '';
+                summaryResult.appendChild(formattedSummary);
+            })
+            .catch(error => {
+                console.error('Error details:', error);
+                summaryResult.textContent = 'Error generating summary: ' + error.message;
+            });
+        }
+
+        // JavaScript: Add file validation and better error handling
+        function analyzePapers() {
+            const fileInput = document.getElementById('fileInput');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const keywordsSection = document.getElementById('keywords-section');
+            const papersSection = document.getElementById('papers-section');
+
+            // Reset sections
+            keywordsSection.style.display = 'none';
+            papersSection.style.display = 'none';
+
+            // Validate file input
+            if (!fileInput.files.length) {
+                showError('Please select at least one PDF file.');
+                return;
+            }
+
+            // Show loading state
+            showLoading();
+
+            // Prepare form data
+            const formData = new FormData();
+            Array.from(fileInput.files).forEach(file => {
+                formData.append('files', file);
+            });
+
+            // Send request to backend
+            fetch('/api/search_related', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideLoading();
+                displayResults(data);
+            })
+            .catch(error => {
+                hideLoading();
+                showError(`Error: ${error.message}`);
+            });
+        }
+
+        function showLoading() {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div class="loading-spinner">
+                    <p>Analyzing papers...</p>
+                </div>
+            `;
+        }
+
+        function hideLoading() {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div id="keywords-section" class="section" style="display: none;">
+                    <h3>Keywords</h3>
+                    <div id="keywords-list" class="keywords-container"></div>
+                </div>
+                <div id="summary-section" class="section" style="display: none;">
+                    <h3>Summary</h3>
+                    <div id="summary-content"></div>
+                </div>
+                <div id="papers-section" class="section" style="display: none;">
+                    <h3>Related Papers</h3>
+                    <div id="papers-list" class="papers-container"></div>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div class="error">${message}</div>
+            `;
+        }
+
+        function displayResults(data) {
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+
+            // Display Keywords
+            if (data.keywords?.length) {
+                const keywordsSection = document.getElementById('keywords-section');
+                const keywordsList = document.getElementById('keywords-list');
+                keywordsSection.style.display = 'block';
+                keywordsList.innerHTML = data.keywords.map(keyword => 
+                    `<span class="keyword-tag">${keyword}</span>`
+                ).join('');
+            }
+
+
+            // Display Related Papers
+            const papersSection = document.getElementById('papers-section');
+            const papersList = document.getElementById('papers-list');
+            papersSection.style.display = 'block';
+
+            if (data.related_papers?.length) {
+                papersList.innerHTML = data.related_papers.map(paper => `
+                    <div class="paper-card">
+                        <div class="paper-title">${paper.title}</div>
+                        <div class="paper-authors">${paper.authors.join(', ')}</div>
+                        <div class="paper-source">Source: ${paper.source}</div>
+                        ${paper.abstract ? `
+                            <div class="paper-abstract">
+                                ${paper.abstract.length > 300 ? 
+                                    paper.abstract.substring(0, 300) + '...' : 
+                                    paper.abstract}
+                            </div>
+                        ` : ''}
+                        <div class="paper-links">
+                            ${paper.url ? `
+                                <a href="${paper.url}" target="_blank" rel="noopener noreferrer" 
+                                   class="paper-link view-link">View Paper</a>
+                            ` : ''}
+                            ${paper.pdf_url ? `
+                                <a href="${paper.pdf_url}" target="_blank" rel="noopener noreferrer" 
+                                   class="paper-link download-link">Download PDF</a>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                papersList.innerHTML = '<p>No related papers found.</p>';
+            }
+        }
+
+
+        // Replace this function in your index.html
+        function startVoiceChat() {
+            if (!documentProcessed) {
+                document.getElementById('processingAlertModal').showModal();
+                return;
+            }
+
+            const micButton = document.getElementById('micButton');
+            const recordingStatus = document.getElementById('recordingStatus');
+            const chatHistory = document.getElementById('chatHistory');
+            
+            // Toggle recording state
+            if (micButton.classList.contains('recording')) {
+                // Stop recording
+                micButton.classList.remove('recording');
+                recordingStatus.classList.remove('active');
+                // Add your stop recording logic here
+            } else {
+                // Start recording
+                micButton.classList.add('recording');
+                recordingStatus.classList.add('active');
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showErrorMessage('Your browser does not support voice recording.');
+                    resetRecordingState();
+                    return;
+                }
+
+                fetch('/voice-interactive/start-conversation', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    if (!data.transcribed_text || data.transcribed_text.trim() === '') {
+                        throw new Error('No speech detected. Please try speaking again.');
+                    }
+                    
+                    // Add to chat history
+                    const userBubble = `<div class="chat user"><div class="bubble">${data.transcribed_text}</div></div>`;
+                    let formattedResponse = data.response
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold text between **
+                            .replace(/\n/g, '<br>');  // Add line breaks
+
+                        const botBubble = `<div class="chat bot"><div class="bubble">${formattedResponse}</div></div>`;
+                    
+                    chatHistory.insertAdjacentHTML('beforeend', userBubble);
+                    chatHistory.insertAdjacentHTML('beforeend', botBubble);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                })
+                .catch(error => {
+                    showErrorMessage(error.message);
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    resetRecordingState();
+                });
+            }
+        }
+
+        function showErrorMessage(message) {
+            const chatHistory = document.getElementById('chatHistory');
+            const errorBubble = `
+                <div class="chat bot">
+                    <div class="bubble" style="background-color: #ffebee; color: #c62828;">
+                        ${message}
+                    </div>
+                </div>
+            `;
+            chatHistory.insertAdjacentHTML('beforeend', errorBubble);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function resetRecordingState() {
+            const micButton = document.getElementById('micButton');
+            const recordingStatus = document.getElementById('recordingStatus');
+            micButton.classList.remove('recording');
+            recordingStatus.classList.remove('active');
+        }
+
+        function updateVoiceStatus(message) {
+            const voiceText = document.getElementById('voiceText');
+            if (voiceText) {
+                voiceText.innerText = message;
+            }
+        }
+
+        function addVoiceChatUI() {
+            const voiceChatDiv = document.getElementById('Voicechat');
+            if (voiceChatDiv) {
+                voiceChatDiv.innerHTML = `
+                    <h2>Voice Chat</h2>
+                    <div class="voice-controls">
+                        <button id="startVoiceBtn" onclick="startVoiceChat()" class="voice-button">
+                            Start Voice Recording
+                        </button>
+                        <div id="voiceStatus" class="status-indicator"></div>
+                    </div>
+                    <p id="voiceText" class="voice-text">Click the button to start recording...</p>
+                `;
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(match) {
+                const escape = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                };
+                return escape[match];
+            });
+        }
+        </script>
+    </body>
+</html>
